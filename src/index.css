@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+@theme {
+  --color-bg-dark: #F9F8F5;
+  --color-bg-light: #FFFFFF;
+  --color-surface: #F0EFEA;
+  --color-text-primary: #131313;
+  --color-text-secondary: #575753;
+  --color-text-dark: #F9F8F5;
+  --color-accent: #96C4C8;
+  --color-accent-cold: #6FA2A7;
+  --color-border: #E6E4DF;
+  --color-overlay: rgba(249, 248, 245, 0.85);
+
+  --font-display: 'Space Mono', monospace;
+  --font-ui: 'Space Mono', monospace;
+  --font-mono: 'Space Mono', monospace;
+  
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 32px;
+  --spacing-lg: 64px;
+  --spacing-xl: 120px;
+}
+
+@layer base {
+  :root {
+    --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-base: 0.35s var(--ease-smooth);
+    --transition-slow: 0.8s var(--ease-smooth);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg-dark);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
