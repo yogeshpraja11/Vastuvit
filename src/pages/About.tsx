@@ -1,25 +1,111 @@
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue, useMotionValueEvent } from 'framer-motion';
+import { useRef, useState } from 'react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
+
+const AnimatedLine = ({
+  word1,
+  word2,
+  font1,
+  font2,
+  sizeClass,
+  progress,
+  triggerPoint
+}: {
+  word1: string,
+  word2: string,
+  font1: string,
+  font2: string,
+  sizeClass: string,
+  progress: MotionValue<number>,
+  triggerPoint: number
+}) => {
+  const [swapped, setSwapped] = useState(false);
+
+  // Trigger automatically when scroll passes the trigger point
+  useMotionValueEvent(progress, 'change', (latest) => {
+    if (latest >= triggerPoint) {
+      setSwapped(true);
+    } else {
+      setSwapped(false);
+    }
+  });
+
+  return (
+    <div className={`relative flex justify-center items-center overflow-hidden h-[0.85em] w-full ${sizeClass}`}>
+      <motion.span
+        initial={false}
+        animate={{ y: swapped ? "-100%" : "0%" }}
+        transition={{ duration: 0.6, ease: [0.25, 1, 0.35, 1] }}
+        className={`absolute whitespace-nowrap leading-none ${font1}`}
+      >
+        {word1}
+      </motion.span>
+      <motion.span
+        initial={false}
+        animate={{ y: swapped ? "0%" : "100%" }}
+        transition={{ duration: 0.6, ease: [0.25, 1, 0.35, 1] }}
+        className={`absolute whitespace-nowrap leading-none ${font2}`}
+      >
+        {word2}
+      </motion.span>
+    </div>
+  );
+};
+
+const ScrollTextReplace = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  return (
+    <section ref={containerRef} className="h-[100vh] relative border-b border-border">
+      <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden w-full px-6">
+        <div className="text-center w-full flex flex-col items-center justify-center text-[#111] leading-none gap-y-0">
+
+          <AnimatedLine
+            word1="TRANSFORMING"
+            word2="CINEMATIC"
+            font1="font-serif font-thin tracking-normal"
+            font2="font-display font-medium tracking-[-0.02em]"
+            sizeClass="text-[10vw] md:text-[7vw]"
+            progress={scrollYProgress}
+            triggerPoint={0.35}
+          />
+
+          <AnimatedLine
+            word1="ARCHITECTURE"
+            word2="VISUAL"
+            font1="font-display font-medium uppercase tracking-[-0.02em]"
+            font2="font-serif font-thin tracking-normal"
+            sizeClass="text-[12vw] md:text-[9vw]"
+            progress={scrollYProgress}
+            triggerPoint={0.5}
+          />
+
+          <AnimatedLine
+            word1="INTO"
+            word2="NARRATIVES"
+            font1="font-serif font-thin tracking-normal"
+            font2="font-display font-medium tracking-[-0.02em]"
+            sizeClass="text-[10vw] md:text-[7vw]"
+            progress={scrollYProgress}
+            triggerPoint={0.60}
+          />
+
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export default function About() {
   return (
     <PageTransition>
-      {/* 4.1 Hero */}
-      <section className="bg-bg-dark h-[70vh] flex flex-col items-center justify-center text-center px-6 border-b border-border">
-        <motion.span 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-          className="font-mono text-[11px] text-accent uppercase tracking-widest mb-8 block"
-        >
-          Established 2009
-        </motion.span>
-        <motion.h1 
-          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.8 }}
-          className="font-display text-5xl md:text-[9vw] leading-[1.1] text-text-primary max-w-5xl"
-        >
-          A studio built on conviction.
-        </motion.h1>
-      </section>
+      {/* Scroll Text Replace Animation */}
+      <ScrollTextReplace />
 
       {/* 4.2 Philosophy */}
       <section className="bg-bg-light text-text-dark py-[120px] px-6 md:px-20">
@@ -67,25 +153,25 @@ export default function About() {
 
       {/* 4.4 Timeline */}
       <section className="bg-bg-dark border-t border-border overflow-hidden py-[120px]">
-         <div className="max-w-[1440px] mx-auto px-6 md:px-20 mb-20">
-           <h2 className="font-display text-5xl md:text-[72px]">Chronology</h2>
-         </div>
-         {/* Simple horizontal scrolling native container (architectural preference vs complex hijack) */}
-         <div className="flex overflow-x-auto pb-10 px-6 md:px-20 gap-20 hide-scrollbar snap-x cursor-grab active:cursor-grabbing">
-           {[
-             { year: '2009', text: 'Vastuvita Studio founded in London.' },
-             { year: '2012', text: 'First major cultural commission won.' },
-             { year: '2015', text: 'Expansion to Tokyo studio.' },
-             { year: '2019', text: 'Awarded Global Architect of the Year.' },
-             { year: '2023', text: 'Launched urban sustainability initiative.' },
-             { year: '2026', text: 'Present form, shaping the future.' }
-           ].map((item, i) => (
-             <div key={i} className="min-w-[300px] snap-center flex flex-col border-l border-border pl-8 pt-4">
-               <span className="font-mono text-[11px] text-accent tracking-widest mb-6">{item.year}</span>
-               <p className="font-ui text-lg text-text-primary">{item.text}</p>
-             </div>
-           ))}
-         </div>
+        <div className="max-w-[1440px] mx-auto px-6 md:px-20 mb-20">
+          <h2 className="font-display text-5xl md:text-[72px]">Chronology</h2>
+        </div>
+        {/* Simple horizontal scrolling native container (architectural preference vs complex hijack) */}
+        <div className="flex overflow-x-auto pb-10 px-6 md:px-20 gap-20 hide-scrollbar snap-x cursor-grab active:cursor-grabbing">
+          {[
+            { year: '2009', text: 'Vastuvita Studio founded in London.' },
+            { year: '2012', text: 'First major cultural commission won.' },
+            { year: '2015', text: 'Expansion to Tokyo studio.' },
+            { year: '2019', text: 'Awarded Global Architect of the Year.' },
+            { year: '2023', text: 'Launched urban sustainability initiative.' },
+            { year: '2026', text: 'Present form, shaping the future.' }
+          ].map((item, i) => (
+            <div key={i} className="min-w-[300px] snap-center flex flex-col border-l border-border pl-8 pt-4">
+              <span className="font-mono text-[11px] text-accent tracking-widest mb-6">{item.year}</span>
+              <p className="font-ui text-lg text-text-primary">{item.text}</p>
+            </div>
+          ))}
+        </div>
       </section>
     </PageTransition>
   );

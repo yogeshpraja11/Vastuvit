@@ -1,6 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
-
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @theme {
   --color-bg-dark: #F9F8F5;
@@ -17,6 +16,7 @@
   --font-display: 'Space Mono', monospace;
   --font-ui: 'Space Mono', monospace;
   --font-mono: 'Space Mono', monospace;
+  --font-serif: 'Cormorant Garamond', serif;
   
   --spacing-xs: 8px;
   --spacing-sm: 16px;

@@ -27,14 +27,17 @@ export default function Services() {
 
       {/* 5.2 Accordion Services */}
       <section className="bg-bg-dark py-12 px-6 md:px-20">
-        <div className="max-w-[1440px] mx-auto border-t border-border">
+        <div 
+          className="max-w-[1440px] mx-auto border-t border-border"
+          onMouseLeave={() => setExpanded(null)}
+        >
           {SERVICES_DATA.map((service) => {
             const isExpanded = expanded === service.id;
             return (
               <div 
                 key={service.id} 
                 className={`group border-b border-border cursor-pointer transition-colors duration-500 overflow-hidden ${isExpanded ? 'bg-surface/50' : 'hover:bg-surface/30'}`}
-                onClick={() => setExpanded(isExpanded ? null : service.id)}
+                onMouseEnter={() => setExpanded(service.id)}
               >
                 <div className="py-10 flex items-center justify-between">
                   <div className="flex items-center gap-12 w-full">
@@ -61,7 +64,7 @@ export default function Services() {
                           <p className="font-ui text-lg font-light leading-relaxed">{service.desc}</p>
                         </div>
                         <div className="aspect-[16/9] w-full hidden md:block overflow-hidden">
-                          <img src={service.img} alt={service.title} className="w-full h-full object-cover grayscale mix-blend-luminosity" />
+                          <img src={service.img} alt={service.title} className="w-full h-full object-cover" />
                         </div>
                       </div>
                     </motion.div>

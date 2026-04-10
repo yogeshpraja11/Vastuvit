@@ -8,6 +8,11 @@ import About from './About';
 import Services from './Services';
 import Contact from './Contact';
 
+// Local Assets
+import sketchImg from '../assets/Sketch.png';
+import sketchBlackImg from '../assets/Sketch_Black.png';
+import homeProjectImg from '../assets/Home.png';
+
 export default function Home() {
   const heroRef = useRef(null);
   const { scrollY } = useScroll();
@@ -77,36 +82,57 @@ export default function Home() {
       </section>
 
       {/* 1.3 Selected Work (Placeholder content) */}
-      <section className="bg-bg-light text-text-dark py-[120px] px-6 md:px-20 relative z-20">
+      <section className="bg-bg-light text-text-dark py-[10px] px-6 md:px-20 relative z-20">
         <div className="max-w-[1440px] mx-auto">
-          <ScrollReveal className="flex justify-between items-end mb-24">
-            <h2 className="font-display text-5xl md:text-[72px]">Selected Work</h2>
-            <span className="font-mono text-[11px] uppercase tracking-widest">2026 Archive</span>
-          </ScrollReveal>
+          <div className="relative mt-20 min-h-[800px] md:min-h-[1200px]">
+            {/* Collage Layout inspired by ss 4 */}
 
-          <div className="grid grid-cols-12 gap-6 min-h-[1000px]">
-            {/* Simple staggered cards using grid */}
-            <div className="col-span-12 md:col-span-7 h-[600px] bg-slate-300 relative group overflow-hidden" data-cursor>
-              <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80" className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105" alt="Project" />
-            </div>
-            <div className="col-span-12 md:col-span-5 md:mt-[200px] h-[700px] bg-slate-400 relative group overflow-hidden" data-cursor>
-              <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80" className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105" alt="Project" />
+            {/* 1. Primary Sketch (Top) */}
+            <ScrollReveal className="relative z-0 w-full md:w-[85%] mx-auto">
+              <div className="overflow-hidden bg-surface group" data-cursor>
+                <img
+                  src={sketchImg}
+                  alt="Process Sketch"
+                  className="w-full h-auto object-cover transition-transform duration-[1.2s] group-hover:scale-105"
+                />
+              </div>
+            </ScrollReveal>
+
+            {/* 2. Secondary Sketch (Bottom Left - Overlapping) */}
+            <ScrollReveal delay={0.2} className="absolute top-[60%] md:top-[60%] left-[5%] md:left-[5%] z-20 w-[55%] md:w-[42%]">
+              <div className="overflow-hidden bg-white" data-cursor>
+                <img
+                  src={sketchBlackImg}
+                  alt="Blueprint Sketch"
+                  className="w-full h-auto object-cover transition-transform duration-[1.2s] group-hover:scale-105"
+                />
+              </div>
+            </ScrollReveal>
+
+            {/* 3. Final Result (Bottom Right - Overlapping) */}
+            <ScrollReveal delay={0.4} className="absolute top-[57.5%] md:top-[57.5%] right-[3%] md:right-[3%] z-30 w-[65%] md:w-[50%]">
+              <div className="overflow-hidden" data-cursor>
+                <img
+                  src={homeProjectImg}
+                  alt="Final Architecture"
+                  className="w-full h-auto object-cover transition-transform duration-[1.2s] group-hover:scale-105"
+                />
+              </div>
+            </ScrollReveal>
+
+            {/* Bottom Left Quote Section - Overlapping the B&W sketch at the bottom */}
+            <div className="absolute top-[80%] md:top-[80%] left-[15%] md:left-[15%] z-40 w-max max-w-[90vw]">
+              <ScrollReveal delay={0.6}>
+                <p className="font-display text-[24px] md:text-[26px] leading-[1.1] text-text-primary">
+                  A studio <br />
+                  built on <br />
+                  conviction.
+                </p>
+              </ScrollReveal>
             </div>
           </div>
         </div>
       </section>
-
-      {/* 1.4 Philosophy Marquee */}
-      <section className="bg-bg-dark py-12 overflow-hidden flex items-center border-y border-border">
-        <motion.div
-          animate={{ x: [0, -1000] }}
-          transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-          className="whitespace-nowrap font-display italic text-[72px] text-text-primary opacity-80"
-        >
-          MATERIAL — SPACE — LIGHT — STRUCTURE — ENDURANCE — MATERIAL — SPACE — LIGHT —
-        </motion.div>
-      </section>
-
       {/* Embedded Pages */}
       <div id="projects" className="w-full relative"><Projects /></div>
       <div id="about" className="w-full relative"><About /></div>
