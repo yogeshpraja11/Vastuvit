@@ -1,6 +1,8 @@
-import { motion, useScroll, useTransform, MotionValue, useMotionValueEvent } from 'framer-motion';
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
+import type { MotionValue } from 'framer-motion';
 import { useRef, useState } from 'react';
 import PageTransition from '../components/PageTransition';
+import { useIsNested } from '../lib/page-transition-context';
 import ScrollReveal from '../components/ScrollReveal';
 
 const AnimatedLine = ({
@@ -60,10 +62,20 @@ const ScrollTextReplace = () => {
     offset: ["start end", "end start"]
   });
 
+  const nested = useIsNested();
+  const Heading = nested ? 'h2' : 'h1';
+
   return (
-    <section ref={containerRef} className="h-[100vh] relative border-b border-border">
-      <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden w-full px-6">
-        <div className="text-center w-full flex flex-col items-center justify-center text-[#111] leading-none gap-y-0">
+    <section ref={containerRef} className="h-dvh relative border-b border-border">
+      <div className="sticky top-0 h-dvh flex flex-col items-center justify-center overflow-hidden w-full px-6">
+        {/* The animated word-swap is decorative to assistive tech: the lines
+            are individually meaningless mid-swap. The heading carries the
+            readable phrase, so this route has a real title instead of none. */}
+        <Heading
+          aria-label="Transforming architecture into cinematic visual narratives"
+          className="text-center w-full flex flex-col items-center justify-center text-text-primary leading-none gap-y-0 m-0"
+        >
+          <span aria-hidden="true" className="contents">
 
           <AnimatedLine
             word1="TRANSFORMING"
@@ -95,7 +107,8 @@ const ScrollTextReplace = () => {
             triggerPoint={0.60}
           />
 
-        </div>
+          </span>
+        </Heading>
       </div>
     </section>
   );
@@ -108,7 +121,7 @@ export default function About() {
       <ScrollTextReplace />
 
       {/* 4.2 Philosophy */}
-      <section className="bg-bg-light text-text-dark py-[120px] px-6 md:px-20">
+      <section className="bg-bg-light text-text-primary py-[120px] px-6 md:px-20">
         <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-12">
           {[
             { num: '01', title: 'Material Truth', text: 'We believe materials should be expressed honestly, not concealed. The textural quality of raw concrete, timber, and steel forms the foundation of our spatial dialogue.' },
@@ -116,7 +129,7 @@ export default function About() {
             { num: '03', title: 'Enduring Craft', text: 'We design for permanence. In a world of fleeting trends, our buildings are rooted in rigorous detailing and masterful craftsmanship intended to age gracefully.' }
           ].map((pillar, i) => (
             <ScrollReveal key={i} delay={i * 0.2} className="flex flex-col">
-              <span className="font-mono text-[11px] text-accent uppercase tracking-widest block mb-4 border-b border-border/20 pb-4">{pillar.num}</span>
+              <span className="font-mono text-[11px] text-accent-ink uppercase tracking-widest block mb-4 border-b border-border/20 pb-4">{pillar.num}</span>
               <h3 className="font-display text-3xl mb-4">{pillar.title}</h3>
               <p className="font-ui text-text-secondary">{pillar.text}</p>
             </ScrollReveal>
@@ -142,7 +155,7 @@ export default function About() {
                   <img src={member.img} alt={member.name} className="w-full h-full object-cover grayscale mix-blend-luminosity group-hover:mix-blend-normal group-hover:grayscale-0 transition-all duration-700" />
                   <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-bg-dark/90 to-transparent translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
                     <h4 className="font-display text-2xl text-text-primary">{member.name}</h4>
-                    <p className="font-mono text-[11px] text-accent uppercase tracking-widest">{member.role}</p>
+                    <p className="font-mono text-[11px] text-accent-ink uppercase tracking-widest">{member.role}</p>
                   </div>
                 </div>
               </ScrollReveal>
@@ -157,9 +170,16 @@ export default function About() {
           <h2 className="font-display text-5xl md:text-[72px]">Chronology</h2>
         </div>
         {/* Simple horizontal scrolling native container (architectural preference vs complex hijack) */}
-        <div className="flex overflow-x-auto pb-10 px-6 md:px-20 gap-20 hide-scrollbar snap-x cursor-grab active:cursor-grabbing">
+        {/* Focusable so the rail can be scrolled with arrow keys — a bare
+            overflow container is unreachable without a pointer. */}
+        <div
+          tabIndex={0}
+          role="group"
+          aria-label="Studio chronology, scroll horizontally"
+          className="flex overflow-x-auto pb-10 px-6 md:px-20 gap-20 hide-scrollbar snap-x"
+        >
           {[
-            { year: '2009', text: 'Vastuvita Studio founded in London.' },
+            { year: '2009', text: 'VASTUVIT founded in London.' },
             { year: '2012', text: 'First major cultural commission won.' },
             { year: '2015', text: 'Expansion to Tokyo studio.' },
             { year: '2019', text: 'Awarded Global Architect of the Year.' },
@@ -167,7 +187,7 @@ export default function About() {
             { year: '2026', text: 'Present form, shaping the future.' }
           ].map((item, i) => (
             <div key={i} className="min-w-[300px] snap-center flex flex-col border-l border-border pl-8 pt-4">
-              <span className="font-mono text-[11px] text-accent tracking-widest mb-6">{item.year}</span>
+              <span className="font-mono text-[11px] text-accent-ink tracking-widest mb-6">{item.year}</span>
               <p className="font-ui text-lg text-text-primary">{item.text}</p>
             </div>
           ))}

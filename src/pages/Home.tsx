@@ -21,15 +21,19 @@ export default function Home() {
   return (
     <PageTransition>
       {/* 1.1 Hero Section */}
-      <section ref={heroRef} className="relative w-full h-screen overflow-hidden flex items-center justify-center -mt-[72px]">
+      <section ref={heroRef} className="relative w-full h-dvh overflow-hidden flex items-center justify-center -mt-[72px]">
         <motion.div
-          className="absolute inset-0 w-full h-[120vh] -top-[10vh] bg-surface z-0"
+          className="absolute inset-0 w-full h-[120dvh] -top-[10dvh] bg-surface z-0"
           style={{ y: yParallax }}
         >
-          {/* External placeholder architecture image */}
+          {/* External placeholder architecture image. Decorative: the heading
+              beneath it carries the meaning, so an alt string would just be
+              noise in a screen reader. */}
           <img
             src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80"
-            alt="Vastuvita Hero"
+            alt=""
+            fetchPriority="high"
+            decoding="async"
             className="w-full h-full object-cover opacity-60"
           />
           <div className="absolute inset-0 bg-bg-dark/40 mix-blend-multiply" />
@@ -38,7 +42,7 @@ export default function Home() {
         <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-5xl">
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-            className="font-mono text-accent text-[11px] uppercase tracking-widest mb-8"
+            className="font-mono text-accent-ink text-[11px] uppercase tracking-widest mb-8"
           >
             — EST. 2009 — VASTUVIT
           </motion.p>
@@ -54,13 +58,16 @@ export default function Home() {
             An architecture studio committed to enduring material and spatial clarity.
           </motion.p>
 
-          <motion.button
+          {/* Was a <button> with no handler — the hero's primary call to
+              action did nothing at all. Matches the navbar's anchor pattern. */}
+          <motion.a
+            href="#projects"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
-            className="border border-accent text-text-primary uppercase font-ui text-[12px] tracking-widest py-[14px] px-[36px] hover:bg-accent hover:text-bg-dark transition-all duration-300"
+            className="inline-block border border-accent-ink text-text-primary uppercase font-ui text-[12px] tracking-widest py-[14px] px-[36px] hover:bg-accent-ink hover:text-bg-dark hover:border-accent-ink transition-all duration-300"
             data-cursor
           >
             View Projects
-          </motion.button>
+          </motion.a>
         </div>
       </section>
 
@@ -75,14 +82,14 @@ export default function Home() {
           ].map((stat, i) => (
             <ScrollReveal key={i} delay={i * 0.1} className={`flex flex-col items-center text-center ${i !== 3 ? 'md:border-r border-border' : ''}`}>
               <span className="font-display text-5xl md:text-[56px] text-text-primary mb-2">{stat.num}</span>
-              <span className="font-mono text-[11px] text-accent uppercase tracking-widest">{stat.label}</span>
+              <span className="font-mono text-[11px] text-accent-ink uppercase tracking-widest">{stat.label}</span>
             </ScrollReveal>
           ))}
         </div>
       </section>
 
       {/* 1.3 Selected Work (Placeholder content) */}
-      <section className="bg-bg-light text-text-dark py-[10px] px-6 md:px-20 relative z-20">
+      <section className="bg-bg-light text-text-primary py-[10px] px-6 md:px-20 relative z-20">
         <div className="max-w-[1440px] mx-auto">
           <div className="relative mt-20 min-h-[800px] md:min-h-[1200px]">
             {/* Collage Layout inspired by ss 4 */}
@@ -92,7 +99,9 @@ export default function Home() {
               <div className="overflow-hidden bg-surface group" data-cursor>
                 <img
                   src={sketchImg}
-                  alt="Process Sketch"
+                  alt="Early process sketch exploring the building's massing"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-auto object-cover transition-transform duration-[1.2s] group-hover:scale-105"
                 />
               </div>
@@ -100,10 +109,12 @@ export default function Home() {
 
             {/* 2. Secondary Sketch (Bottom Left - Overlapping) */}
             <ScrollReveal delay={0.2} className="absolute top-[60%] md:top-[60%] left-[5%] md:left-[5%] z-20 w-[55%] md:w-[42%]">
-              <div className="overflow-hidden bg-white" data-cursor>
+              <div className="overflow-hidden bg-bg-light group" data-cursor>
                 <img
                   src={sketchBlackImg}
-                  alt="Blueprint Sketch"
+                  alt="Blueprint sketch of the project in plan"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-auto object-cover transition-transform duration-[1.2s] group-hover:scale-105"
                 />
               </div>
@@ -111,10 +122,12 @@ export default function Home() {
 
             {/* 3. Final Result (Bottom Right - Overlapping) */}
             <ScrollReveal delay={0.4} className="absolute top-[57.5%] md:top-[57.5%] right-[3%] md:right-[3%] z-30 w-[65%] md:w-[50%]">
-              <div className="overflow-hidden" data-cursor>
+              <div className="overflow-hidden group" data-cursor>
                 <img
                   src={homeProjectImg}
-                  alt="Final Architecture"
+                  alt="The completed building on site"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-auto object-cover transition-transform duration-[1.2s] group-hover:scale-105"
                 />
               </div>
@@ -133,11 +146,12 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* Embedded Pages */}
-      <div id="projects" className="w-full relative"><Projects /></div>
-      <div id="about" className="w-full relative"><About /></div>
-      <div id="services" className="w-full relative"><Services /></div>
-      <div id="contact" className="w-full relative"><Contact /></div>
+      {/* Embedded Pages. `scroll-mt` keeps anchored sections clear of the
+          fixed 72px navbar, which otherwise covers the top of each target. */}
+      <section id="projects" aria-label="Projects" className="w-full relative scroll-mt-[72px]"><Projects /></section>
+      <section id="about" aria-label="About the studio" className="w-full relative scroll-mt-[72px]"><About /></section>
+      <section id="services" aria-label="Services" className="w-full relative scroll-mt-[72px]"><Services /></section>
+      <section id="contact" aria-label="Contact" className="w-full relative scroll-mt-[72px]"><Contact /></section>
     </PageTransition>
   );
 }

@@ -1,20 +1,15 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
-
-const PROJECTS = [
-  { id: 1, title: 'The Obsidian House', location: 'Kyoto, Japan', year: '2025', category: 'Residential', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1000&auto=format&fit=crop' },
-  { id: 2, title: 'Lumina Gallery', location: 'Paris, France', year: '2024', category: 'Cultural', img: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=1000&auto=format&fit=crop' },
-  { id: 3, title: 'Aura Skyscraper', location: 'New York, USA', year: '2023', category: 'Commercial', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop' },
-  { id: 4, title: 'Vertex Pavilion', location: 'Oslo, Norway', year: '2025', category: 'Cultural', img: 'https://images.unsplash.com/photo-1545042746-1db810e206ab?q=80&w=1000&auto=format&fit=crop' },
-  { id: 5, title: 'Slate Residence', location: 'London, UK', year: '2022', category: 'Residential', img: 'https://images.unsplash.com/photo-1600607688969-a5bfcd64bd40?q=80&w=1000&auto=format&fit=crop' },
-  { id: 6, title: 'The Mono Block', location: 'Berlin, Germany', year: '2024', category: 'Urban', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000&auto=format&fit=crop' },
-];
-
-const FILTERS = ['All', 'Residential', 'Commercial', 'Cultural', 'Urban'];
+import { useIsNested } from '../lib/page-transition-context';
+import { PROJECTS, FILTERS } from '../data/projects';
 
 export default function Projects() {
   const [activeFilter, setActiveFilter] = useState('All');
+  const nested = useIsNested();
+  // Embedded in the home page this is a section, not the page's subject.
+  const Heading = nested ? motion.h2 : motion.h1;
 
   const filtered = activeFilter === 'All' ? PROJECTS : PROJECTS.filter(p => p.category === activeFilter);
 
@@ -23,22 +18,24 @@ export default function Projects() {
       {/* Header */}
       <section className="bg-bg-dark pt-32 pb-20 px-6 md:px-20 text-text-primary">
         <div className="max-w-[1440px] mx-auto">
-          <motion.h1 
+          <Heading
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}
             className="font-display text-[9vw] leading-none mb-12"
           >
             All Projects
-          </motion.h1>
-          
-          <div className="flex flex-wrap gap-4">
+          </Heading>
+
+          <div className="flex flex-wrap gap-4" role="group" aria-label="Filter projects by category">
             {FILTERS.map(f => (
               <button
                 key={f}
+                type="button"
                 onClick={() => setActiveFilter(f)}
+                aria-pressed={activeFilter === f}
                 className={`font-mono text-[11px] uppercase tracking-widest px-4 py-2 border rounded-full transition-all duration-300 ${
-                  activeFilter === f 
-                    ? 'bg-accent text-bg-dark border-accent' 
-                    : 'border-border text-text-secondary hover:text-text-primary hover:border-accent'
+                  activeFilter === f
+                    ? 'bg-accent text-text-primary border-accent'
+                    : 'border-border-strong text-text-secondary hover:text-text-primary hover:border-accent-ink'
                 }`}
                 data-cursor
               >
@@ -60,26 +57,43 @@ export default function Projects() {
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               key={item.id}
-              className="group relative aspect-[3/4] overflow-hidden bg-surface cursor-pointer"
-              data-cursor
             >
-              <img 
-                src={item.img} 
-                alt={item.title} 
-                className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-                <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                  <h3 className="font-display text-3xl text-text-primary mb-2">{item.title}</h3>
-                  <div className="flex justify-between font-mono text-[11px] text-accent uppercase tracking-widest border-t border-border/50 pt-4 mt-4">
-                    <span>{item.location}</span>
-                    <span>{item.year}</span>
+              {/* A real link: these were `cursor-pointer` divs that navigated
+                  nowhere and were invisible to keyboard and screen readers. */}
+              <Link
+                to={`/projects/${item.id}`}
+                className="group relative block aspect-[3/4] overflow-hidden bg-surface"
+                data-cursor
+              >
+                <img
+                  src={item.img}
+                  alt=""
+                  loading={index < 3 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105"
+                />
+                {/* Caption is permanent below `md`, where there is no hover to
+                    reveal it — touch visitors previously saw no project names
+                    at all. Above `md` it stays a hover/focus reveal. */}
+                <div className="absolute inset-0 bg-overlay flex flex-col justify-end p-8 transition-opacity duration-500 md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100">
+                  <div className="transition-transform duration-500 md:translate-y-4 md:group-hover:translate-y-0 md:group-focus-visible:translate-y-0">
+                    <h3 className="font-display text-3xl text-text-primary mb-2">{item.title}</h3>
+                    <div className="flex justify-between font-mono text-[11px] text-accent-ink uppercase tracking-widest border-t border-border pt-4 mt-4">
+                      <span>{item.location}</span>
+                      <span>{item.year}</span>
+                    </div>
                   </div>
-                </motion.div>
-              </div>
+                </div>
+              </Link>
             </motion.div>
           ))}
         </div>
+
+        {filtered.length === 0 && (
+          <p className="max-w-[1440px] mx-auto font-ui text-text-secondary py-20">
+            No projects in this category yet.
+          </p>
+        )}
       </section>
     </PageTransition>
   );

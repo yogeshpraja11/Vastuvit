@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 export default function ScrollReveal({
@@ -10,14 +10,22 @@ export default function ScrollReveal({
   className?: string;
   delay?: number;
 }) {
+  const reduceMotion = useReducedMotion();
+
+  // Content must be visible by default rather than animated into existence:
+  // with reduced motion on, or if the observer never fires, an opacity-0
+  // starting state is a blank page.
+  if (reduceMotion) return <div className={className}>{children}</div>;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15 }}
       transition={{
-        duration: 0.7,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        // Exponential ease-out: fast to settle, no lingering drift.
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1],
         delay,
       }}
       className={className}

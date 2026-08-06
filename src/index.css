@@ -2,15 +2,33 @@
 @import "tailwindcss";
 
 @theme {
+  /* Grounds.
+     NOTE: `bg-dark` / `bg-light` are legacy names left over from this theme's
+     dark-mode origin. Both are light. `bg-dark` is the off-white page ground;
+     `bg-light` is the pure-white section ground. Do not assume `*-dark` means
+     a dark value here — that assumption is what produced the white-on-white
+     headings this file previously shipped. */
   --color-bg-dark: #F9F8F5;
   --color-bg-light: #FFFFFF;
   --color-surface: #F0EFEA;
-  --color-text-primary: #131313;
-  --color-text-secondary: #575753;
-  --color-text-dark: #F9F8F5;
+
+  /* Ink. All three clear 4.5:1 on both grounds. */
+  --color-text-primary: #131313;   /* 17.5:1 on bg-dark */
+  --color-text-secondary: #575753; /*  6.8:1 on bg-dark */
+  --color-text-muted: #63635E;     /*  5.7:1 on bg-dark */
+
+  /* Accent, split by role — this pair is the fix for the old single accent,
+     which was authored for a dark ground and reads at 1.79:1 on this one.
+     `accent` is a FILL ONLY. Never set type in it.
+     `accent-ink` is the type-safe member of the same family (5.8:1). */
   --color-accent: #96C4C8;
-  --color-accent-cold: #6FA2A7;
+  --color-accent-ink: #2E6A6F;
+
+  /* Lines. `border` is decorative hairline only; anything that bounds an
+     interactive control uses `border-strong` to clear the 3:1 non-text floor. */
   --color-border: #E6E4DF;
+  --color-border-strong: #86827A;
+
   --color-overlay: rgba(249, 248, 245, 0.85);
 
   --font-display: 'Space Mono', monospace;
@@ -47,6 +65,63 @@
     box-sizing: border-box;
     overflow-x: hidden;
   }
+
+  /* Keyboard focus. Every interactive element previously either had no focus
+     style or cleared it with `focus:outline-none`, leaving keyboard users with
+     nothing to follow. Mouse users never see this; keyboard users always do. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent-ink);
+    outline-offset: 3px;
+    border-radius: 1px;
+  }
+
+  /* Skip link — the nav is a fixed 72px bar with a mega-menu, so keyboard
+     users would otherwise tab through the whole menu on every page. */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 1000;
+    padding: 12px 20px;
+    background: var(--color-text-primary);
+    color: var(--color-bg-dark);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .skip-link:focus {
+    left: 8px;
+    top: 8px;
+  }
+}
+
+/* Respect the OS reduced-motion setting. This site is heavily animated:
+   page wipes, scroll reveals, staggered text, parallax and a custom cursor.
+   Without this, none of it could be turned off. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Referenced by the About timeline but never defined, so the class did
+   nothing. Kept as a real utility rather than deleted: the horizontal rail
+   is designed without a visible bar. */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Custom Scrollbar */
