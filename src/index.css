@@ -50,9 +50,11 @@
     --transition-slow: 0.8s var(--ease-smooth);
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  /* Smooth scrolling is Lenis' job now (see components/SmoothScroll.tsx), not
+     the browser's. `scroll-behavior: smooth` used to live here; leaving it in
+     means every anchor click runs a native smooth scroll *and* a Lenis one at
+     the same time, and the two fight over the scroll position. Lenis falls
+     back to instant scrolling under prefers-reduced-motion on its own. */
 
   body {
     background-color: var(--color-bg-dark);

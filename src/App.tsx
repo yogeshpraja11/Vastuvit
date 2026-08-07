@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Layout from './components/Layout';
+import SmoothScroll from './components/SmoothScroll';
 import Home from './pages/Home';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
@@ -28,9 +29,11 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout>
-        <AnimatedRoutes />
-      </Layout>
+      <SmoothScroll>
+        <Layout>
+          <AnimatedRoutes />
+        </Layout>
+      </SmoothScroll>
     </BrowserRouter>
   );
 }
