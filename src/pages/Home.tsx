@@ -1,8 +1,6 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
 import PageTransition from '../components/PageTransition';
-import StaggeredText from '../components/StaggeredText';
 import ScrollReveal from '../components/ScrollReveal';
+import ScrollRevealHero from '../components/ScrollRevealHero';
 import Projects from './Projects';
 import About from './About';
 import Services from './Services';
@@ -13,63 +11,42 @@ import sketchImg from '../assets/Sketch.png';
 import sketchBlackImg from '../assets/Sketch_Black.png';
 import homeProjectImg from '../assets/Home.png';
 
-export default function Home() {
-  const heroRef = useRef(null);
-  const { scrollY } = useScroll();
-  const yParallax = useTransform(scrollY, [0, 1000], [0, 300]);
+/* Served from /public for now. In production these are whatever URLs the API
+   hands back — the component takes them as props precisely so this pairing
+   can move to S3 without touching it. Both ladders use the same widths so the
+   two layers always resolve to the same scale. */
+const SKETCH = {
+  src: '/media/Sketch_Image.webp',
+  srcSet:
+    '/media/Sketch_Image-1440.webp 1440w, /media/Sketch_Image-2160.webp 2160w, /media/Sketch_Image.webp 2880w',
+};
+const PHOTO = {
+  src: '/media/Final_Image.webp',
+  srcSet:
+    '/media/Final_Image-1440.webp 1440w, /media/Final_Image-2160.webp 2160w, /media/Final_Image.webp 2880w',
+};
 
+export default function Home() {
   return (
     <PageTransition>
-      {/* 1.1 Hero Section */}
-      <section ref={heroRef} className="relative w-full h-dvh overflow-hidden flex items-center justify-center -mt-[72px]">
-        <motion.div
-          className="absolute inset-0 w-full h-[120dvh] -top-[10dvh] bg-surface z-0"
-          style={{ y: yParallax }}
-        >
-          {/* External placeholder architecture image. Decorative: the heading
-              beneath it carries the meaning, so an alt string would just be
-              noise in a screen reader. */}
-          <img
-            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80"
-            alt=""
-            fetchPriority="high"
-            decoding="async"
-            className="w-full h-full object-cover opacity-60"
-          />
-          <div className="absolute inset-0 bg-bg-dark/40 mix-blend-multiply" />
-        </motion.div>
-
-        <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-5xl">
-          <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-            className="font-mono text-accent-ink text-[11px] uppercase tracking-widest mb-8"
-          >
-            — EST. 2009 — VASTUVIT
-          </motion.p>
-
-          <h1 className="font-display text-5xl md:text-[9vw] leading-[1.1] text-text-primary uppercase mb-8">
-            <StaggeredText text="We build Spaces that Remember you." />
-          </h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2, duration: 0.8 }}
-            className="font-ui font-light text-base md:text-lg max-w-lg mx-auto mb-12"
-          >
-            An architecture studio committed to enduring material and spatial clarity.
-          </motion.p>
-
-          {/* Was a <button> with no handler — the hero's primary call to
-              action did nothing at all. Matches the navbar's anchor pattern. */}
-          <motion.a
-            href="#projects"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
-            className="inline-block border border-accent-ink text-text-primary uppercase font-ui text-[12px] tracking-widest py-[14px] px-[36px] hover:bg-accent-ink hover:text-bg-dark hover:border-accent-ink transition-all duration-300"
-            data-cursor
-          >
-            View Projects
-          </motion.a>
-        </div>
-      </section>
+      {/* 1.1 Hero Section. `headerOffset` is the fixed navbar's 72px: the pin
+          runs edge to edge, but the frame centres in the clear area below the
+          bar so the bar never covers the top of the drawing. */}
+      <ScrollRevealHero
+        headline={
+          <>
+            Where vision
+            <br />
+            meets execution
+          </>
+        }
+        sketchSrc={SKETCH.src}
+        sketchSrcSet={SKETCH.srcSet}
+        photoSrc={PHOTO.src}
+        photoSrcSet={PHOTO.srcSet}
+        alt="A single-storey glass pavilion with a deep flat roof overhang and a stone end wall, seen across a striped lawn"
+        headerOffset={72}
+      />
 
       {/* 1.2 Featured Numbers */}
       <section className="bg-bg-dark py-[120px] px-6 border-b border-border relative z-20">

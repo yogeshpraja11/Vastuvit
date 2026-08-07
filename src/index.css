@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Outfit:wght@300;400;500&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -35,6 +35,7 @@
   --font-ui: 'Space Mono', monospace;
   --font-mono: 'Space Mono', monospace;
   --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'Outfit', sans-serif;
   
   --spacing-xs: 8px;
   --spacing-sm: 16px;
@@ -65,7 +66,16 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    overflow-x: hidden;
+
+    /* `clip`, not `hidden`. Both suppress the sideways overflow this rule
+       exists for (the page-transition wipe), but `hidden` makes the body a
+       scroll container, and a scroll container between the viewport and a
+       `position: sticky` element is what stops it pinning. Chrome currently
+       propagates body overflow up to the viewport and the pin in
+       ScrollRevealHero survives; Safari has historically not, and nothing
+       about that is worth depending on. `clip` never creates the container in
+       the first place. */
+    overflow-x: clip;
   }
 
   /* Keyboard focus. Every interactive element previously either had no focus
