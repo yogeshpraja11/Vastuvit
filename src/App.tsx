@@ -8,6 +8,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import About from './pages/About';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
+import Showcase from './pages/Showcase';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -21,6 +22,10 @@ function AnimatedRoutes() {
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
+        {/* Standalone stage for the scroll-driven showcase. It is deliberately
+            its own route rather than a Home section: the mechanic needs the
+            full viewport and (n + 1) screens of scroll to itself. */}
+        <Route path="/showcase" element={<Showcase />} />
       </Routes>
     </AnimatePresence>
   );

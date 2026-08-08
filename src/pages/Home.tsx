@@ -1,7 +1,9 @@
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import ScrollRevealHero from '../components/ScrollRevealHero';
+import ProjectGallery from '../components/gallery/ProjectGallery';
 import Projects from './Projects';
+import { SHOWCASE_PROJECTS } from '../data/showcase-projects';
 import About from './About';
 import Services from './Services';
 import Contact from './Contact';
@@ -123,6 +125,16 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* 1.4 Selected work, scroll-driven. Full-bleed on purpose — the stage is
+          exactly one viewport and pins itself, so it sits outside the page's
+          max-w container rather than inside it. `z-20` matches the sections
+          above so the pinned hero at the top of the page cannot show through.
+          It leads into the project grid below: the same work, first as a
+          sequence you are walked through, then as an index you can scan. */}
+      <div className="relative z-20">
+        <ProjectGallery projects={SHOWCASE_PROJECTS} />
+      </div>
+
       {/* Embedded Pages. `scroll-mt` keeps anchored sections clear of the
           fixed 72px navbar, which otherwise covers the top of each target. */}
       <section id="projects" aria-label="Projects" className="w-full relative scroll-mt-[72px]"><Projects /></section>
