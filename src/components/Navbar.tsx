@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 
 /* ─── Data for mega-menu panels ─── */
@@ -71,6 +71,14 @@ const ABOUT_ITEMS = [
 /* ─── Animation variants ─── */
 const ease: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94];
 
+/* Opens the page-load sequence, ahead of the hero's headline and frame. The
+   bar mounts once for the whole app — it sits above the router, not inside it
+   — so this plays on arrival and never again on a route change. Delayed past
+   PageTransition's 0.4s wipe, which is opaque and covers the bar until then. */
+const INTRO_HIDDEN = { opacity: 0, y: -16 };
+const INTRO_VISIBLE = { opacity: 1, y: 0 };
+const INTRO_TRANSITION = { duration: 0.6, delay: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] };
+
 const panelVariants: Variants = {
   hidden: { opacity: 0, height: 0 },
   visible: { opacity: 1, height: 'auto', transition: { duration: 0.35, ease } },
@@ -87,6 +95,7 @@ export default function Navbar() {
   const navRef = useRef<HTMLDivElement>(null);
   const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const location = useLocation();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -142,7 +151,19 @@ export default function Navbar() {
   };
 
   return (
-    <div ref={navRef} className="fixed top-0 left-0 w-full z-[100]" onBlur={handleBlur}>
+    <motion.div
+      ref={navRef}
+      className="fixed top-0 left-0 w-full z-[100]"
+      onBlur={handleBlur}
+      /* Plain objects rather than a named variant: a string `animate` on this
+         wrapper would propagate the label down to every motion child that has
+         no `animate` of its own — including the mega-menu panels — and drive
+         them off this timeline. `initial={false}` mounts straight at the
+         visible state, so a reduced-motion reader gets no drop-in at all. */
+      initial={reduceMotion ? false : INTRO_HIDDEN}
+      animate={INTRO_VISIBLE}
+      transition={INTRO_TRANSITION}
+    >
       {/* ─── Main Bar ─── */}
       <nav
         aria-label="Primary"
@@ -498,6 +519,6 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

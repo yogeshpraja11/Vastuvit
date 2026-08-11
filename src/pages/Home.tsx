@@ -35,13 +35,7 @@ export default function Home() {
           runs edge to edge, but the frame centres in the clear area below the
           bar so the bar never covers the top of the drawing. */}
       <ScrollRevealHero
-        headline={
-          <>
-            Where vision
-            <br />
-            meets execution
-          </>
-        }
+        headline={['Where vision', 'meets execution']}
         sketchSrc={SKETCH.src}
         sketchSrcSet={SKETCH.srcSet}
         photoSrc={PHOTO.src}
