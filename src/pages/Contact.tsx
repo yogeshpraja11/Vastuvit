@@ -12,12 +12,6 @@ import { useIsNested } from '../lib/page-transition-context';
 const ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undefined;
 const INQUIRY_EMAIL = import.meta.env.VITE_CONTACT_EMAIL as string | undefined;
 
-/* Published details. The practice has not supplied these yet; the London and
-   Tokyo addresses and the +44 number that used to sit here were invented by
-   the template this site started from. They render as visible placeholders
-   until real values exist, because a prospective client who discovers a
-   fabricated office stops believing everything else on the page. Fill these in
-   and the layout below switches to real links on its own. */
 const STUDIO_ADDRESS: string[] | null = null;
 const STUDIO_PHONE: string | null = null;
 
@@ -45,11 +39,7 @@ function validate(fields: Fields) {
   return errors;
 }
 
-/* No `focus:outline-none`. It generates `.focus\:outline-none:focus`, which at
-   two selector components outranks the single-component `:focus-visible` rule
-   in index.css — so the fields on the one surface that has to convert were the
-   only ones on the site with no keyboard focus ring. The border shift below is
-   the mouse affordance; the global ring is the keyboard one. */
+
 const fieldClass =
   'w-full bg-transparent border-b border-border-strong py-4 font-ui text-text-primary ' +
   'placeholder:text-text-muted focus:border-accent-ink transition-colors';
@@ -58,9 +48,7 @@ const labelClass = 'font-mono text-[11px] text-text-muted uppercase tracking-wid
 
 const errorClass = 'font-ui text-[13px] leading-relaxed text-danger';
 
-/* A detail the practice has not published yet. Deliberately not dressed up as a
-   value: brackets, muted ink and the words "to be confirmed", so that nobody —
-   including whoever ships this — can mistake it for an address. */
+
 function Pending({ label }: { label: string }) {
   return (
     <p className="font-mono text-[13px] leading-relaxed text-text-muted">
@@ -129,23 +117,14 @@ export default function Contact() {
   const busy = status === 'submitting';
   const nested = useIsNested();
   const Heading = nested ? motion.h2 : motion.h1;
-  /* Nested in the home page the hero above is an h2, so these have to step down
-     with it or they read as siblings of "Let's build together" rather than
-     parts of it. */
   const SubHeading = nested ? 'h3' : 'h2';
 
   return (
     <PageTransition>
-      {/* 6.1 Hero */}
-      {/* 180px was a single fixed value at every width: reasonable under a
-          desktop hero, but on a 812px phone it spent a fifth of the first
-          viewport on nothing before the heading arrived. */}
       <section className="bg-bg-dark pt-28 md:pt-[180px] pb-20 px-6 md:px-20">
         <div className="max-w-[1440px] mx-auto">
           <Heading
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            /* Was a bare `9vw`: 34px on a phone and an unbounded 230px on a
-               2560px display. Clamped to a real floor and a 6rem ceiling. */
             className="font-display text-[clamp(2.5rem,9vw,6rem)] tracking-[-0.02em] leading-none text-text-primary mb-24"
           >
             Let&rsquo;s build<br />together.
@@ -203,9 +182,7 @@ export default function Contact() {
                 <label htmlFor="contact-type" className={labelClass}>
                   Project type
                 </label>
-                {/* `appearance-none` stripped the native arrow and nothing
-                    replaced it, so the one control on the form that opens a menu
-                    looked exactly like the three that do not. */}
+
                 <div className="relative">
                   <select
                     id="contact-type"

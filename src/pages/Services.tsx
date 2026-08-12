@@ -13,32 +13,11 @@ const SERVICES_DATA = [
   { id: '05', title: 'Restoration', img: 'https://images.unsplash.com/photo-1600607688969-a5bfcd64bd40?q=80&w=800&auto=format&fit=crop', desc: 'Sensitive interventions into historic structures. Preserving heritage while injecting contemporary program and structural vitality.' },
 ];
 
-/* Scroll the section holds the screen for, per service, on top of the one
-   viewport the pinned frame itself occupies. A quarter of a screen each — two
-   wheel notches — so the five follow each other closely. Worth knowing before
-   dropping it further: at this pace a steady scroll crosses a band in roughly
-   the 600ms a handover takes, so below about 20 the rows start being cut off
-   mid-animation by the next one rather than reading as a sequence. */
 const STEP_VH = 25;
 const SECTION_VH = 100 + STEP_VH * SERVICES_DATA.length;
 
-/* The pin only exists where the two-column layout does. Below `lg` the media
-   panel is hidden and the viewport is short enough that a pinned frame risks
-   clipping the open row, so small screens keep normal scrolling and open rows
-   on tap. */
 const PIN_QUERY = '(min-width: 1024px)';
 
-/* One curve and one duration for every moving part of a handover: row tint,
-   title, the + mark, the panel height and the photo crossfade. They used to run
-   at four different speeds — 0.5s, 0.6s, 0.7s — so a single gesture arrived in
-   stages. The curve matters more than the spread: the panel was on an expo-out
-   that spends about two thirds of its travel in the first fifth of the time,
-   which is exactly what reads as a snap. This is a symmetric ease-in-out, so
-   the row leaves and arrives gently, the way the Lenis wheel does.
-
-   The Tailwind twin has to stay in step with the Framer one — same 600ms, same
-   four bezier handles — or the CSS half of the handover drifts against the JS
-   half and the staging comes straight back. */
 const EASE: [number, number, number, number] = [0.65, 0, 0.35, 1];
 const HANDOVER = { duration: 0.6, ease: EASE };
 const HANDOVER_CLASS = 'duration-600 ease-[cubic-bezier(0.65,0,0.35,1)]';
@@ -62,12 +41,6 @@ export default function Services() {
     return () => mq.removeEventListener('change', update);
   }, []);
 
-  /* `start start` → `end end` spans exactly the pinned stretch: 0 the moment the
-     frame parks against the top of the viewport, 1 the moment it lets go. So
-     progress measures the scroll the section absorbs while standing still,
-     which is the whole point of pinning — the rows advance against a ruler that
-     the rows themselves cannot move. Measuring the list in the document (what
-     this did before) meant every expansion shifted the thing being measured. */
   const { scrollYProgress } = useScroll({
     target: pinRef,
     offset: ['start start', 'end end'],
@@ -76,18 +49,10 @@ export default function Services() {
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
     if (!canPin.current) return;
 
-    /* Even bands rather than `round(progress * last)`. Rounding would put a
-       service on each *endpoint* of the range, which hands the first and last
-       rows half the dwell of the middle three. Nothing here has to physically
-       travel to an anchor — the rows hold still and only the scroll advances —
-       so an equal slice each is what actually reads as evenly paced. */
     const last = SERVICES_DATA.length - 1;
     const index = Math.min(last, Math.max(0, Math.floor(progress * SERVICES_DATA.length)));
     const id = SERVICES_DATA[index].id;
 
-    /* Only write when the scroll-derived row actually changes. Without this the
-       next frame would overwrite a click — instead a click holds until you
-       scroll on into a different row, and then the sequence picks up again. */
     if (id === fromScroll.current) return;
     fromScroll.current = id;
     setExpanded(id);
@@ -148,12 +113,6 @@ export default function Services() {
                   />
                 )}
               </AnimatePresence>
-
-              {/* Lottie Overlay. The art is dark ink (#252945) on transparent, so
-                  it multiplies onto the paper ground like a drawing — `screen`
-                  here was a holdover from the dark theme and erased the line work. */}
-              {/* It belongs to the empty state only: once a service is picked its
-                  photo owns the frame, so the drawing fades out with the crossfade. */}
               <div
                 className={`absolute inset-0 flex items-center justify-center p-8 md:p-12 mix-blend-multiply pointer-events-none z-10 transition-opacity ${HANDOVER_CLASS} ${expanded ? 'opacity-0' : 'opacity-100'}`}
               >
