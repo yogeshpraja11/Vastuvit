@@ -1,17 +1,27 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useIsNested } from '../lib/page-transition-context';
 
-/* PLACEHOLDER — replace with the studio's real address before launch.
-   Carried over from the previous template; see PRODUCT.md "Evidence on Hand". */
-const INQUIRY_EMAIL = 'hello@arcvault.studio';
-
-/* Set VITE_CONTACT_ENDPOINT to POST inquiries at a real backend. With no
-   endpoint configured we hand off to the visitor's mail client instead of
-   pretending to have sent something — an inquiry this site loses is the one
-   outcome it exists to produce. */
+/* Delivery. Set VITE_CONTACT_ENDPOINT to POST inquiries at a backend, or
+   VITE_CONTACT_EMAIL to hand off to the visitor's mail client. With neither
+   set the form cannot deliver anything and says so, rather than accepting a
+   message it would silently drop — the one outcome this site exists to
+   produce is the one it must never quietly lose. */
 const ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undefined;
+const INQUIRY_EMAIL = import.meta.env.VITE_CONTACT_EMAIL as string | undefined;
+
+/* Published details. The practice has not supplied these yet; the London and
+   Tokyo addresses and the +44 number that used to sit here were invented by
+   the template this site started from. They render as visible placeholders
+   until real values exist, because a prospective client who discovers a
+   fabricated office stops believing everything else on the page. Fill these in
+   and the layout below switches to real links on its own. */
+const STUDIO_ADDRESS: string[] | null = null;
+const STUDIO_PHONE: string | null = null;
+
+const canDeliver = Boolean(ENDPOINT || INQUIRY_EMAIL);
 
 type Status = 'idle' | 'submitting' | 'sent' | 'handoff' | 'error';
 
@@ -35,9 +45,29 @@ function validate(fields: Fields) {
   return errors;
 }
 
+/* No `focus:outline-none`. It generates `.focus\:outline-none:focus`, which at
+   two selector components outranks the single-component `:focus-visible` rule
+   in index.css — so the fields on the one surface that has to convert were the
+   only ones on the site with no keyboard focus ring. The border shift below is
+   the mouse affordance; the global ring is the keyboard one. */
 const fieldClass =
   'w-full bg-transparent border-b border-border-strong py-4 font-ui text-text-primary ' +
-  'placeholder:text-text-muted focus:outline-none focus:border-accent-ink transition-colors';
+  'placeholder:text-text-muted focus:border-accent-ink transition-colors';
+
+const labelClass = 'font-mono text-[11px] text-text-muted uppercase tracking-widest';
+
+const errorClass = 'font-ui text-[13px] leading-relaxed text-danger';
+
+/* A detail the practice has not published yet. Deliberately not dressed up as a
+   value: brackets, muted ink and the words "to be confirmed", so that nobody —
+   including whoever ships this — can mistake it for an address. */
+function Pending({ label }: { label: string }) {
+  return (
+    <p className="font-mono text-[13px] leading-relaxed text-text-muted">
+      [ {label} — to be confirmed ]
+    </p>
+  );
+}
 
 export default function Contact() {
   const [fields, setFields] = useState<Fields>(EMPTY);
@@ -51,6 +81,8 @@ export default function Contact() {
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
+    if (!canDeliver) return;
+
     const found = validate(fields);
     setErrors(found);
     if (Object.keys(found).length > 0) {
@@ -95,18 +127,28 @@ export default function Contact() {
   };
 
   const busy = status === 'submitting';
-  const Heading = useIsNested() ? motion.h2 : motion.h1;
+  const nested = useIsNested();
+  const Heading = nested ? motion.h2 : motion.h1;
+  /* Nested in the home page the hero above is an h2, so these have to step down
+     with it or they read as siblings of "Let's build together" rather than
+     parts of it. */
+  const SubHeading = nested ? 'h3' : 'h2';
 
   return (
     <PageTransition>
       {/* 6.1 Hero */}
-      <section className="bg-bg-dark pt-[180px] pb-20 px-6 md:px-20">
+      {/* 180px was a single fixed value at every width: reasonable under a
+          desktop hero, but on a 812px phone it spent a fifth of the first
+          viewport on nothing before the heading arrived. */}
+      <section className="bg-bg-dark pt-28 md:pt-[180px] pb-20 px-6 md:px-20">
         <div className="max-w-[1440px] mx-auto">
           <Heading
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="font-display text-[9vw] leading-none text-text-primary mb-24"
+            /* Was a bare `9vw`: 34px on a phone and an unbounded 230px on a
+               2560px display. Clamped to a real floor and a 6rem ceiling. */
+            className="font-display text-[clamp(2.5rem,9vw,6rem)] tracking-[-0.02em] leading-none text-text-primary mb-24"
           >
-            Let's build<br />together.
+            Let&rsquo;s build<br />together.
           </Heading>
 
           {/* 6.2 2-Col Layout */}
@@ -114,12 +156,14 @@ export default function Contact() {
             {/* Form */}
             <form className="flex flex-col gap-10" onSubmit={handleSubmit} noValidate>
               <div className="flex flex-col gap-2">
-                <label htmlFor="contact-name" className="font-mono text-[11px] text-text-muted uppercase tracking-widest">
-                  Your name <span className="text-accent-ink">*</span>
+                <label htmlFor="contact-name" className={labelClass}>
+                  Your name <span className="text-accent-ink" aria-hidden="true">*</span>
                 </label>
                 <input
                   id="contact-name"
                   type="text"
+                  autoComplete="name"
+                  required
                   value={fields.name}
                   onChange={(e) => set('name')(e.target.value)}
                   aria-invalid={Boolean(errors.name)}
@@ -127,19 +171,21 @@ export default function Contact() {
                   className={fieldClass}
                 />
                 {errors.name && (
-                  <p id="contact-name-error" className="font-ui text-[13px] text-text-primary">
+                  <p id="contact-name-error" className={errorClass}>
                     {errors.name}
                   </p>
                 )}
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="contact-email" className="font-mono text-[11px] text-text-muted uppercase tracking-widest">
-                  Email address <span className="text-accent-ink">*</span>
+                <label htmlFor="contact-email" className={labelClass}>
+                  Email address <span className="text-accent-ink" aria-hidden="true">*</span>
                 </label>
                 <input
                   id="contact-email"
                   type="email"
+                  autoComplete="email"
+                  required
                   value={fields.email}
                   onChange={(e) => set('email')(e.target.value)}
                   aria-invalid={Boolean(errors.email)}
@@ -147,38 +193,49 @@ export default function Contact() {
                   className={fieldClass}
                 />
                 {errors.email && (
-                  <p id="contact-email-error" className="font-ui text-[13px] text-text-primary">
+                  <p id="contact-email-error" className={errorClass}>
                     {errors.email}
                   </p>
                 )}
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="contact-type" className="font-mono text-[11px] text-text-muted uppercase tracking-widest">
+                <label htmlFor="contact-type" className={labelClass}>
                   Project type
                 </label>
-                <select
-                  id="contact-type"
-                  value={fields.type}
-                  onChange={(e) => set('type')(e.target.value)}
-                  className={`${fieldClass} appearance-none cursor-pointer ${
-                    fields.type ? 'text-text-primary' : 'text-text-muted'
-                  }`}
-                >
-                  <option value="">Select a type</option>
-                  {PROJECT_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
+                {/* `appearance-none` stripped the native arrow and nothing
+                    replaced it, so the one control on the form that opens a menu
+                    looked exactly like the three that do not. */}
+                <div className="relative">
+                  <select
+                    id="contact-type"
+                    value={fields.type}
+                    onChange={(e) => set('type')(e.target.value)}
+                    className={`${fieldClass} appearance-none cursor-pointer pr-8 ${
+                      fields.type ? 'text-text-primary' : 'text-text-muted'
+                    }`}
+                  >
+                    <option value="">Select a type</option>
+                    {PROJECT_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden="true"
+                    strokeWidth={1.5}
+                    className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="contact-details" className="font-mono text-[11px] text-text-muted uppercase tracking-widest">
-                  Project details <span className="text-accent-ink">*</span>
+                <label htmlFor="contact-details" className={labelClass}>
+                  Project details <span className="text-accent-ink" aria-hidden="true">*</span>
                 </label>
                 <textarea
                   id="contact-details"
                   rows={4}
+                  required
                   value={fields.details}
                   onChange={(e) => set('details')(e.target.value)}
                   aria-invalid={Boolean(errors.details)}
@@ -186,7 +243,7 @@ export default function Contact() {
                   className={`${fieldClass} resize-none`}
                 />
                 {errors.details && (
-                  <p id="contact-details-error" className="font-ui text-[13px] text-text-primary">
+                  <p id="contact-details-error" className={errorClass}>
                     {errors.details}
                   </p>
                 )}
@@ -194,12 +251,20 @@ export default function Contact() {
 
               <button
                 type="submit"
-                disabled={busy}
-                className="w-full bg-accent text-text-primary py-5 font-ui text-[13px] uppercase tracking-[0.12em] hover:bg-text-primary hover:text-bg-dark transition-colors duration-300 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={busy || !canDeliver}
+                aria-describedby={canDeliver ? undefined : 'contact-unwired'}
+                className="w-full bg-accent text-text-primary py-5 font-ui text-[13px] uppercase tracking-[0.12em] hover:bg-text-primary hover:text-bg-dark transition-colors duration-300 mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-accent disabled:hover:text-text-primary"
                 data-cursor
               >
                 {busy ? 'Sending…' : 'Submit inquiry'}
               </button>
+
+              {!canDeliver && (
+                <p id="contact-unwired" className={errorClass}>
+                  This form is not connected yet, so it cannot deliver a message.
+                  The studio&rsquo;s contact details are being finalised.
+                </p>
+              )}
 
               {/* Outcome. Announced politely so it reaches screen readers, and
                   never claims delivery the site cannot actually guarantee. */}
@@ -215,12 +280,19 @@ export default function Contact() {
                   </p>
                 )}
                 {status === 'error' && (
-                  <p className="font-ui text-[15px] text-text-primary">
-                    That did not send. Email us directly at{' '}
-                    <a href={`mailto:${INQUIRY_EMAIL}`} className="underline hover:text-accent-ink">
-                      {INQUIRY_EMAIL}
-                    </a>{' '}
-                    and we will pick it up from there.
+                  <p className={errorClass}>
+                    That did not send.{' '}
+                    {INQUIRY_EMAIL ? (
+                      <>
+                        Email us directly at{' '}
+                        <a href={`mailto:${INQUIRY_EMAIL}`} className="underline hover:text-accent-ink">
+                          {INQUIRY_EMAIL}
+                        </a>{' '}
+                        and we will pick it up from there.
+                      </>
+                    ) : (
+                      <>Please try again in a moment.</>
+                    )}
                   </p>
                 )}
               </div>
@@ -229,23 +301,34 @@ export default function Contact() {
             {/* Info */}
             <div className="flex flex-col gap-16 font-ui md:pl-12 border-t md:border-t-0 md:border-l border-border pt-12 md:pt-0">
               <div className="flex flex-col gap-4">
-                <h2 className="font-mono text-[11px] text-accent-ink uppercase tracking-widest">Studios</h2>
-                <address className="not-italic text-lg text-text-secondary leading-relaxed max-w-xs">
-                  14 Broadwick Street<br />Soho, London<br />W1F 8HQ, United Kingdom
-                </address>
-                <address className="not-italic text-lg text-text-secondary leading-relaxed max-w-xs mt-4">
-                  2-11-3 Meguro<br />Meguro City, Tokyo<br />153-0063, Japan
-                </address>
+                <SubHeading className="font-mono text-[11px] text-accent-ink uppercase tracking-widest">Studio</SubHeading>
+                {STUDIO_ADDRESS ? (
+                  <address className="not-italic text-lg text-text-secondary leading-relaxed max-w-xs">
+                    {STUDIO_ADDRESS.map((line) => (
+                      <span key={line} className="block">{line}</span>
+                    ))}
+                  </address>
+                ) : (
+                  <Pending label="Studio address" />
+                )}
               </div>
 
               <div className="flex flex-col gap-4">
-                <h2 className="font-mono text-[11px] text-accent-ink uppercase tracking-widest">Direct Inquiries</h2>
-                <a href={`mailto:${INQUIRY_EMAIL}`} className="text-2xl font-display hover:text-accent-ink transition-colors" data-cursor>
-                  {INQUIRY_EMAIL}
-                </a>
-                <a href="tel:+442071234567" className="text-xl font-display hover:text-accent-ink transition-colors" data-cursor>
-                  +44 (0) 20 7123 4567
-                </a>
+                <SubHeading className="font-mono text-[11px] text-accent-ink uppercase tracking-widest">Direct Inquiries</SubHeading>
+                {INQUIRY_EMAIL ? (
+                  <a href={`mailto:${INQUIRY_EMAIL}`} className="text-2xl font-display hover:text-accent-ink transition-colors break-words" data-cursor>
+                    {INQUIRY_EMAIL}
+                  </a>
+                ) : (
+                  <Pending label="Email address" />
+                )}
+                {STUDIO_PHONE ? (
+                  <a href={`tel:${STUDIO_PHONE.replace(/[^+\d]/g, '')}`} className="text-xl font-display hover:text-accent-ink transition-colors" data-cursor>
+                    {STUDIO_PHONE}
+                  </a>
+                ) : (
+                  <Pending label="Phone number" />
+                )}
               </div>
             </div>
           </div>

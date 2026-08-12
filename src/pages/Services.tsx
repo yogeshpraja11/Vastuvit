@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import { useIsNested } from '../lib/page-transition-context';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -12,10 +13,85 @@ const SERVICES_DATA = [
   { id: '05', title: 'Restoration', img: 'https://images.unsplash.com/photo-1600607688969-a5bfcd64bd40?q=80&w=800&auto=format&fit=crop', desc: 'Sensitive interventions into historic structures. Preserving heritage while injecting contemporary program and structural vitality.' },
 ];
 
+/* Scroll the section holds the screen for, per service, on top of the one
+   viewport the pinned frame itself occupies. A quarter of a screen each — two
+   wheel notches — so the five follow each other closely. Worth knowing before
+   dropping it further: at this pace a steady scroll crosses a band in roughly
+   the 600ms a handover takes, so below about 20 the rows start being cut off
+   mid-animation by the next one rather than reading as a sequence. */
+const STEP_VH = 25;
+const SECTION_VH = 100 + STEP_VH * SERVICES_DATA.length;
+
+/* The pin only exists where the two-column layout does. Below `lg` the media
+   panel is hidden and the viewport is short enough that a pinned frame risks
+   clipping the open row, so small screens keep normal scrolling and open rows
+   on tap. */
+const PIN_QUERY = '(min-width: 1024px)';
+
+/* One curve and one duration for every moving part of a handover: row tint,
+   title, the + mark, the panel height and the photo crossfade. They used to run
+   at four different speeds — 0.5s, 0.6s, 0.7s — so a single gesture arrived in
+   stages. The curve matters more than the spread: the panel was on an expo-out
+   that spends about two thirds of its travel in the first fifth of the time,
+   which is exactly what reads as a snap. This is a symmetric ease-in-out, so
+   the row leaves and arrives gently, the way the Lenis wheel does.
+
+   The Tailwind twin has to stay in step with the Framer one — same 600ms, same
+   four bezier handles — or the CSS half of the handover drifts against the JS
+   half and the staging comes straight back. */
+const EASE: [number, number, number, number] = [0.65, 0, 0.35, 1];
+const HANDOVER = { duration: 0.6, ease: EASE };
+const HANDOVER_CLASS = 'duration-600 ease-[cubic-bezier(0.65,0,0.35,1)]';
+
 export default function Services() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const nested = useIsNested();
   const Heading = nested ? motion.h2 : motion.h1;
+
+  const pinRef = useRef<HTMLElement>(null);
+  const fromScroll = useRef<string | null>(null);
+  const canPin = useRef(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(PIN_QUERY);
+    const update = () => {
+      canPin.current = mq.matches;
+    };
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  /* `start start` → `end end` spans exactly the pinned stretch: 0 the moment the
+     frame parks against the top of the viewport, 1 the moment it lets go. So
+     progress measures the scroll the section absorbs while standing still,
+     which is the whole point of pinning — the rows advance against a ruler that
+     the rows themselves cannot move. Measuring the list in the document (what
+     this did before) meant every expansion shifted the thing being measured. */
+  const { scrollYProgress } = useScroll({
+    target: pinRef,
+    offset: ['start start', 'end end'],
+  });
+
+  useMotionValueEvent(scrollYProgress, 'change', (progress) => {
+    if (!canPin.current) return;
+
+    /* Even bands rather than `round(progress * last)`. Rounding would put a
+       service on each *endpoint* of the range, which hands the first and last
+       rows half the dwell of the middle three. Nothing here has to physically
+       travel to an anchor — the rows hold still and only the scroll advances —
+       so an equal slice each is what actually reads as evenly paced. */
+    const last = SERVICES_DATA.length - 1;
+    const index = Math.min(last, Math.max(0, Math.floor(progress * SERVICES_DATA.length)));
+    const id = SERVICES_DATA[index].id;
+
+    /* Only write when the scroll-derived row actually changes. Without this the
+       next frame would overwrite a click — instead a click holds until you
+       scroll on into a different row, and then the sequence picks up again. */
+    if (id === fromScroll.current) return;
+    fromScroll.current = id;
+    setExpanded(id);
+  });
 
   return (
     <PageTransition>
@@ -29,13 +105,21 @@ export default function Services() {
         </Heading>
       </section>
 
-      {/* 5.2 Content Section */}
-      <section className="bg-bg-dark py-12 md:py-20 px-6 md:px-20">
-        <div className="max-w-[1440px] mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-12 md:gap-16 items-start">
+      {/* 5.2 Content Section. The tall outer section is scroll length, nothing
+          more — the frame inside it sticks to the top and holds the screen
+          still while the list plays through, then releases. */}
+      <section
+        ref={pinRef}
+        style={{ '--pin-height': `${SECTION_VH}vh` } as CSSProperties}
+        className="bg-bg-dark lg:h-[var(--pin-height)]"
+      >
+        <div className="py-12 md:py-20 px-6 md:px-20 lg:sticky lg:top-0 lg:h-dvh lg:py-0 lg:flex lg:items-center">
+          <div className="max-w-[1440px] mx-auto w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-12 md:gap-16 items-start lg:items-center">
 
-            {/* Left: Sticky Media (Desktop Only) */}
-            <div className="hidden lg:block sticky top-32 overflow-hidden bg-surface/10 aspect-square group">
+            {/* Left: Media (Desktop Only). No `sticky` of its own any more — the
+                pinned frame above already holds it still. */}
+            <div className="hidden lg:block relative overflow-hidden bg-surface/10 aspect-square group">
               {/* Background Images Cross-fade */}
               <AnimatePresence initial={false}>
                 {expanded ? (
@@ -44,7 +128,7 @@ export default function Services() {
                     initial={{ opacity: 0, scale: 1.05 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    transition={HANDOVER}
                     className="absolute inset-0"
                   >
                     <img
@@ -60,40 +144,38 @@ export default function Services() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-surface/10 flex items-center justify-center"
-                  >
-                    <span className="font-mono text-[10px] text-text-muted tracking-[0.4em]">SELECT A SERVICE</span>
-                  </motion.div>
+                    className="absolute inset-0 bg-surface/10"
+                  />
                 )}
               </AnimatePresence>
 
-              {/* Lottie Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center p-8 md:p-12 mix-blend-screen pointer-events-none z-10">
+              {/* Lottie Overlay. The art is dark ink (#252945) on transparent, so
+                  it multiplies onto the paper ground like a drawing — `screen`
+                  here was a holdover from the dark theme and erased the line work. */}
+              {/* It belongs to the empty state only: once a service is picked its
+                  photo owns the frame, so the drawing fades out with the crossfade. */}
+              <div
+                className={`absolute inset-0 flex items-center justify-center p-8 md:p-12 mix-blend-multiply pointer-events-none z-10 transition-opacity ${HANDOVER_CLASS} ${expanded ? 'opacity-0' : 'opacity-100'}`}
+              >
                 <DotLottieReact
                   src="https://lottie.host/a8de5cca-c2de-4c33-9a52-e6816d5b1539/BflBsj4eog.lottie"
                   loop
                   autoplay
-                  className="w-full h-full opacity-20 group-hover:opacity-40 transition-opacity duration-700"
+                  className="w-full h-full opacity-60 group-hover:opacity-85 transition-opacity duration-700"
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-bg-dark/60 via-transparent to-transparent pointer-events-none z-20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-bg-dark/30 via-transparent to-transparent pointer-events-none z-20" />
             </div>
 
             {/* Right: Services List */}
-            <div
-              className="border-t border-border"
-              onMouseLeave={() => setExpanded(null)}
-            >
+            <div className="border-t border-border">
               {SERVICES_DATA.map((service) => {
                 const isExpanded = expanded === service.id;
                 return (
                   <div
                     key={service.id}
-                    className={`group border-b border-border transition-all duration-500 overflow-hidden ${isExpanded ? 'bg-surface/15' : 'hover:bg-surface/5'}`}
-                    onMouseEnter={() => setExpanded(service.id)}
+                    className={`group border-b border-border transition-all ${HANDOVER_CLASS} overflow-hidden ${isExpanded ? 'bg-surface/15' : 'hover:bg-surface/5'}`}
                   >
-                    {/* A real button, not a hover-only div: this list was previously
-                        unreachable by keyboard and could not be collapsed by tap. */}
                     <h3 className="m-0">
                       <button
                         type="button"
@@ -104,13 +186,13 @@ export default function Services() {
                       >
                         <span className="flex items-center gap-8 w-full">
                           <span className="font-mono text-[9px] text-text-muted tracking-[0.4em] font-medium hidden md:block">{service.id}</span>
-                          <span className={`font-display transition-all duration-500 group-hover:translate-x-2 leading-tight text-2xl md:text-[28px] ${isExpanded ? 'text-accent-ink' : 'text-text-secondary group-hover:text-text-primary'}`}>
+                          <span className={`font-display transition-all ${HANDOVER_CLASS} group-hover:translate-x-2 leading-tight text-2xl md:text-[28px] ${isExpanded ? 'text-accent-ink' : 'text-text-secondary group-hover:text-text-primary'}`}>
                             {service.title}
                           </span>
                         </span>
                         <span
                           aria-hidden="true"
-                          className="text-accent-ink text-xl font-light transition-transform duration-700 w-6 flex justify-center"
+                          className={`text-accent-ink text-xl font-light transition-transform ${HANDOVER_CLASS} w-6 flex justify-center`}
                           style={{ transform: isExpanded ? 'rotate(45deg)' : 'rotate(0deg)' }}
                         >
                           +
@@ -125,7 +207,7 @@ export default function Services() {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                          transition={HANDOVER}
                         >
                           <div className="pb-8 pt-0 px-4 md:px-6">
                             <div className="md:pl-20 w-full">
@@ -145,6 +227,7 @@ export default function Services() {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
         </div>

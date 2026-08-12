@@ -24,6 +24,14 @@
   --color-accent: #96C4C8;
   --color-accent-ink: #2E6A6F;
 
+  /* Failure. The contact form previously set its validation messages in
+     `text-primary`, which made "enter an email address so we can reply" look
+     exactly like the paragraph above it. Burnt sienna rather than a signal red:
+     it reads as ink on this paper ground and sits opposite `accent-ink` on the
+     wheel, so it separates without turning the page into an alert. 6.2:1 on
+     bg-dark, so it clears the body-text floor and not just the large-text one. */
+  --color-danger: #A8321E;
+
   /* Lines. `border` is decorative hairline only; anything that bounds an
      interactive control uses `border-strong` to clear the 3:1 non-text floor. */
   --color-border: #E6E4DF;
