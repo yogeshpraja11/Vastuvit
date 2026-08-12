@@ -22,9 +22,6 @@ function AnimatedRoutes() {
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
-        {/* Standalone stage for the scroll-driven showcase. It is deliberately
-            its own route rather than a Home section: the mechanic needs the
-            full viewport and (n + 1) screens of scroll to itself. */}
         <Route path="/showcase" element={<Showcase />} />
       </Routes>
     </AnimatePresence>

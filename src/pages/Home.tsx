@@ -1,5 +1,6 @@
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
+import ScrollRevealLines from '../components/ScrollRevealLines';
 import ScrollRevealHero from '../components/ScrollRevealHero';
 import ProjectGallery from '../components/gallery/ProjectGallery';
 import Projects from './Projects';
@@ -108,13 +109,14 @@ export default function Home() {
 
             {/* Bottom Left Quote Section - Overlapping the B&W sketch at the bottom */}
             <div className="absolute top-[80%] md:top-[80%] left-[15%] md:left-[15%] z-40 w-max max-w-[90vw]">
-              <ScrollReveal delay={0.6}>
-                <p className="font-display text-[24px] md:text-[26px] leading-[1.1] text-text-primary">
-                  A studio <br />
-                  built on <br />
-                  conviction.
-                </p>
-              </ScrollReveal>
+              {/* Uncovered a line at a time rather than as a block — the three
+                  lines are one sentence, and staggering them makes the reader
+                  arrive at "conviction" last. */}
+              <ScrollRevealLines
+                lines={['A studio', 'built on', 'conviction.']}
+                delay={0.6}
+                className="font-display text-[24px] md:text-[26px] leading-[1.1] text-text-primary"
+              />
             </div>
           </div>
         </div>
