@@ -3,17 +3,16 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useIsNested } from '../lib/page-transition-context';
+import {
+  CONTACT_ENDPOINT,
+  INQUIRY_EMAIL,
+  STUDIO_ADDRESS,
+  STUDIO_PHONE,
+} from '../data/studio';
 
-/* Delivery. Set VITE_CONTACT_ENDPOINT to POST inquiries at a backend, or
-   VITE_CONTACT_EMAIL to hand off to the visitor's mail client. With neither
-   set the form cannot deliver anything and says so, rather than accepting a
-   message it would silently drop — the one outcome this site exists to
-   produce is the one it must never quietly lose. */
-const ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undefined;
-const INQUIRY_EMAIL = import.meta.env.VITE_CONTACT_EMAIL as string | undefined;
-
-const STUDIO_ADDRESS: string[] | null = null;
-const STUDIO_PHONE: string | null = null;
+/* These moved to data/studio.ts when the footer started showing the same
+   details — see the note there on why none of them are confirmed yet. */
+const ENDPOINT = CONTACT_ENDPOINT;
 
 const canDeliver = Boolean(ENDPOINT || INQUIRY_EMAIL);
 

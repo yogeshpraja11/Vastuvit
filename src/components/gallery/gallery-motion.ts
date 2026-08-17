@@ -42,10 +42,13 @@ export const PHASE_B_DURATION = 1.3;
 export const PHASE_B_START = PHASE_A_DELAY + PHASE_A_DURATION + PHASE_HOLD;
 
 /**
- * When the whole intro is done and the stage is set, in seconds.
+ * When the whole intro is done, in seconds.
  *
- * Derived from the phase durations above rather than written down separately,
- * so retuning a phase cannot leave the hero firing at the wrong moment.
+ * Derived from the phase durations rather than written down separately. Note
+ * that nothing schedules off this — the gallery decides the intro is over by
+ * watching the settle clock reach 1, because a timer and an rAF-driven
+ * animation drift apart the moment the browser throttles frames. It is here
+ * for documentation and for tests.
  */
 export const INTRO_DURATION = PHASE_B_START + PHASE_B_DURATION;
 
@@ -64,7 +67,6 @@ export const phaseTiming = (reduceMotion: boolean) => ({
   b: reduceMotion
     ? { duration: 0, delay: 0 }
     : { duration: PHASE_B_DURATION, delay: PHASE_B_START, ease: EASE },
-  introDuration: reduceMotion ? 0 : INTRO_DURATION,
 });
 
 /** PHASE C — active/inactive thumbnail state. */

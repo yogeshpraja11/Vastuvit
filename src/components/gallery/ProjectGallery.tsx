@@ -9,11 +9,13 @@ import {
   useScroll,
   useTransform,
 } from 'framer-motion';
+import type { MotionValue } from 'framer-motion';
+import { useLenis } from 'lenis/react';
 
 import HeroBackdrop from './HeroBackdrop';
 import ThumbnailTrack from './ThumbnailTrack';
 import GalleryText, { GalleryCaption } from './GalleryText';
-import { EASE, phaseTiming } from './gallery-motion';
+import { EASE, INTRO_DURATION, phaseTiming } from './gallery-motion';
 import { computeGeometry, gapAt, mountXAt } from './gallery-geometry';
 import useActiveIndex from '../../hooks/useActiveIndex';
 import type { ShowcaseProject } from '../../data/showcase-projects';
@@ -34,6 +36,26 @@ const MOBILE_QUERY = '(max-width: 767px)';
 
 /** Track top edge, as a fraction of viewport height. Cards hang below it. */
 const TRACK_TOP_RATIO = 0.44;
+
+/**
+ * Scroll progress past which the intro is skipped outright.
+ *
+ * Small — roughly 100px of a 5400px section. The intro ends with card 0 on the
+ * anchor, which is only true at progress 0, so anywhere else it would be
+ * setting up a position the reader has already left. Arriving mid-section by
+ * deep link or restored scroll goes straight to the settled state, and
+ * crucially takes no scroll lock with it.
+ */
+const INTRO_MAX_PROGRESS = 0.02;
+
+/**
+ * Backstop for the scroll lock, in seconds past the intro's expected end.
+ *
+ * A lock that depends on an animation completing is a lock that never lifts if
+ * the animation never completes. Nothing here is expected to fail, but the
+ * failure mode is a page the reader cannot scroll, so it gets a deadline.
+ */
+const LOCK_MAX_OVERRUN = 1.5;
 
 /* ─────────────────────────────────────────────────────────────────────────
    SHARED HOOKS
@@ -200,12 +222,27 @@ function GalleryDesktop({ projects, ready, browseHref, reduceMotion }: BranchPro
    *
    * Observing the STAGE, not the section. `amount` is a fraction of the
    * observed element, and the section is (n + 2) viewports tall — asking for
-   * 60% of 6300px inside a 900px window is a threshold that can never be
+   * most of 6300px inside a 900px window is a threshold that can never be
    * crossed, and the intro would simply never fire. The sticky child is
    * exactly one viewport, so the fraction means what it reads like.
+   *
+   * Nearly all of it, not a bare majority, because the intro takes the
+   * reader's scroll with it. The stage is only fully visible once the section
+   * has pinned — which is also progress 0 — so waiting for that is what makes
+   * the hold land on a full screen rather than freezing the page half way
+   * through the section arriving.
    */
-  const inView = useInView(stageRef, { once: true, amount: 0.6 });
+  const inView = useInView(stageRef, { once: true, amount: 0.95 });
   const revealed = ready && inView;
+
+  /* PHASE 3. Native scroll only — no wheel listener, no preventDefault. Lenis
+     eases `window.scrollTo`, so `window.scrollY` stays truthful and useScroll
+     reads real progress with nothing bridging the two. Declared before the
+     intro because the intro needs to know where the page already is. */
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end'],
+  });
 
   /* The intro's two clocks. Plain 0 → 1 MotionValues rather than `animate`
      props, because several different things are derived from each of them —
@@ -215,30 +252,108 @@ function GalleryDesktop({ projects, ready, browseHref, reduceMotion }: BranchPro
   const settle = useMotionValue(0);
   const [staged, setStaged] = useState(false);
 
+  /* `staged` follows the settle clock itself, not a timer counting out the
+     phase durations in parallel.
+   *
+   * Those two can disagree. Animations advance on requestAnimationFrame, which
+   * the browser throttles in a background tab or under load, while a timeout
+   * keeps counting wall-clock seconds — so the hero and the title would appear
+   * over a row still sitting in its Phase A position. Reading the clock the
+   * animation actually drives makes "the intro has finished" mean it, and it
+   * covers the abort path below for free, whatever duration that lands over.
+   *
+   * Declared BEFORE the intro effect on purpose: effects run in order, so this
+   * subscription is live by the time that one can skip the intro by setting
+   * `settle` outright. Otherwise the skip would have to setState synchronously
+   * from an effect body, which is a cascading render. */
+  useEffect(
+    () =>
+      settle.on('change', (v) => {
+        // 0.999 rather than 1: the Phase B easing is aggressively front-loaded,
+        // so this trips a beat before the very last frame — which is when the
+        // row has visually arrived anyway.
+        if (v >= 0.999) setStaged(true);
+      }),
+    [settle],
+  );
+
+  /* Running the intro is conditional on the reader actually being at the start
+     of the section, because that is the only place its choreography is true:
+     Phase B ends with card 0 on the anchor, and card 0 is only on the anchor
+     at progress 0. Play it anywhere else and it fights the scroll position
+     rather than setting it up. */
   useEffect(() => {
     if (!revealed) return;
-    const timing = phaseTiming(reduceMotion);
 
-    const a = animate(reveal, 1, timing.a);
-    const b = animate(settle, 1, timing.b);
-    // Derived from the phase constants, never a written-down number, so
-    // retuning a phase cannot leave the hero firing at the wrong moment.
-    const done = setTimeout(() => setStaged(true), timing.introDuration * 1000);
+    /* Already inside the section — a deep link, a restored scroll position, or
+       an observer that fired as the reader swept past. Skip to the settled
+       state; there is no sense opening a prelude to something they are already
+       in, and no sense locking their scroll to make them watch it. */
+    if (scrollYProgress.get() > INTRO_MAX_PROGRESS) {
+      reveal.set(1);
+      settle.set(1);
+      return;
+    }
+
+    const timing = phaseTiming(reduceMotion);
+    const running = [animate(reveal, 1, timing.a), animate(settle, 1, timing.b)];
+
+    return () => running.forEach((c) => c.stop());
+  }, [revealed, reduceMotion, reveal, settle, scrollYProgress]);
+
+  /* Scroll is held for the length of the intro — the same treatment
+     ScrollRevealHero gives its own opening, and for the same reason: the
+     choreography assumes the row is where the intro put it, and a reader who
+     scrolls through it sees neither the intro nor the gallery, just the two
+     fighting.
+   *
+   * Lenis' own stop() covers the wheel. `touch-action` covers the touch it does
+   * not own — syncTouch is off, so touch stays native — and it is safe here
+   * where `overflow` would not be, because it creates no scroll container and
+   * so the sticky pin survives. The clamp catches everything else: arrow keys,
+   * space, anchor jumps.
+   *
+   * Reading `settle` directly rather than trusting `staged`: on the skip path
+   * above the clocks are already at 1 when this effect runs, but the state
+   * derived from them has not landed yet, and a lock that engages for one
+   * frame is still a lock that fought the reader for one frame. */
+  const lenis = useLenis();
+
+  useEffect(() => {
+    if (!revealed || staged || reduceMotion || settle.get() >= 0.999) return;
+
+    const html = document.documentElement;
+    const previousTouchAction = html.style.touchAction;
+    // Where progress is already 0, so holding here means the intro still ends
+    // exactly where the scroll phase begins — and nothing jumps on release.
+    const lockY = window.scrollY;
+    const clamp = () => {
+      if (window.scrollY !== lockY) window.scrollTo(0, lockY);
+    };
+
+    lenis?.stop();
+    html.style.touchAction = 'none';
+    window.addEventListener('scroll', clamp, { passive: true });
+
+    // Finishing the clocks releases the lock through this effect's own cleanup,
+    // so the backstop lifts it by ending the intro rather than by leaving a
+    // half-played animation behind a suddenly scrollable page.
+    const backstop = window.setTimeout(
+      () => {
+        reveal.set(1);
+        settle.set(1);
+      },
+      (INTRO_DURATION + LOCK_MAX_OVERRUN) * 1000,
+    );
 
     return () => {
-      a.stop();
-      b.stop();
-      clearTimeout(done);
+      window.clearTimeout(backstop);
+      window.removeEventListener('scroll', clamp);
+      html.style.touchAction = previousTouchAction;
+      lenis?.start();
     };
-  }, [revealed, reduceMotion, reveal, settle]);
+  }, [revealed, staged, reduceMotion, settle, reveal, lenis]);
 
-  /* PHASE 3. Native scroll only — no wheel listener, no preventDefault. Lenis
-     eases `window.scrollTo`, so `window.scrollY` stays truthful and useScroll
-     reads real progress with nothing bridging the two. */
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  });
 
   /* PHASE B — the gaps opening. This is what turns a row sitting in the middle
      of the screen into one that runs off the right edge. */
@@ -259,10 +374,21 @@ function GalleryDesktop({ projects, ready, browseHref, reduceMotion }: BranchPro
    */
   const mountX = useTransform(settle, (s) => mountXAt(n, s, geometry, viewport.w));
 
-  /* PHASE C — scroll travel, measured from where the intro left the row. Zero
-     at progress 0, so the two translations compose without either needing to
-     know the other's value. */
-  const scrollX = useTransform(scrollYProgress, [0, 1], [0, geometry.travel]);
+  /* PHASE C — scroll travel, measured from where the intro left the row.
+   *
+   * Scaled by `settle`, and that factor is load-bearing. Applied raw, the row
+   * carries the scroll offset from the very first frame — so a reader who
+   * scrolls while the intro is running drags the compact row up to a full
+   * travel-length off to the left, and the whole reveal happens somewhere off
+   * screen. Phasing it in with Phase B means Phase A is composed in the middle
+   * of the viewport no matter where the page has been scrolled to, and by the
+   * time the row is under scroll control the factor is 1 and this is exactly
+   * `p * travel` again.
+   */
+  const scrollX = useTransform(
+    [scrollYProgress, settle] as MotionValue<number>[],
+    ([p, s]: number[]) => s * p * geometry.travel,
+  );
 
   const activeIndex = useActiveIndex(scrollYProgress, n);
   const active = projects[activeIndex];
